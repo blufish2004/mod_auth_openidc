@@ -18,7 +18,7 @@ RUN dpkg -i libcjose-dev_0.6.1.5-1~bionic+1_amd64.deb
 RUN a2enmod ssl
 RUN a2ensite default-ssl
 
-RUN echo "/usr/sbin/apache2ctl start && tail -f /var/log/apache2/error.log " >> /root/run.sh
+RUN echo "/usr/sbin/apache2ctl start && tail -F /var/log/apache2/error.log " >> /root/run.sh
 RUN chmod a+x /root/run.sh
 
 COPY . /root/mod_auth_openidc
@@ -37,7 +37,11 @@ RUN a2enconf openidc
 RUN /usr/sbin/apache2ctl start
 
 RUN mkdir -p /var/www/html/protected
-RUN echo "<html><body><h1>Hello, <?php echo($_SERVER['REMOTE_USER']) ?></h1><pre><?php print_r(array_map(\"htmlentities\", apache_request_headers())); ?></pre><a href=\"/protected/?logout=https%3A%2F%2Flocalhost.zmartzone.eu%2Floggedout.html\">Logout</a></body></html>" >  /var/www/html/protected/index.php
-RUN mkdir -p /var/www/html/api && cp /var/www/html/protected/index.php /var/www/html/api
+ADD index.php /var/www/html/protected
+RUN mkdir -p /var/www/html/api
+ADD index.php /var/www/html/api
 
+EXPOSE 443
+
+ENTRYPOINT /root/run.sh
 # docker run -p 443:443 -it mod_auth_openidc /bin/bash -c "source /etc/apache2/envvars && valgrind --leak-check=full /usr/sbin/apache2 -X"
